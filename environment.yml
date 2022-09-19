@@ -1,0 +1,17 @@
+name: solo_sis_loader
+
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.9
+  - numpy
+  - sunpy
+  - sunpy-soar
+  - xarray
+  - pytest-astropy
+  - pytest-sugar
+  - pip
+  - pip:
+      - cdflib

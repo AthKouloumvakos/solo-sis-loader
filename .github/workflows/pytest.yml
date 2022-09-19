@@ -28,6 +28,6 @@ jobs:
       - name: Activate the enviroment
         run: source env/bin/activate
       - name: Install requirements
-        run: pip3 install .
+        run: pip install -e .[test]
       - name: pytest
         run: python -m pytest

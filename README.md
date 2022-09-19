@@ -1,6 +1,14 @@
-# SolO-SIS-Loader: A python data loader for Suprathermal Ion Spectrograph (SIS) instrument onboard Solar Orbiter (SolO). 
+# SolO-SIS-Loader: A python data loader for Suprathermal Ion Spectrograph (SIS) instrument onboard Solar Orbiter (SolO).
 
-_SolO-SIS-Loader_ is a python data loader for **Suprathermal Ion Spectrograph (SIS)** instrument onboard **Solar Orbiter's (SolO)**. SIS is part of the Energetic Particle Detector (EPD) suite for the SolO spacecraft and provides observations of He to Fe for an energy range from ∼100 keV/nucleon up to several MeV/nucleon. 
+[![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/)
+[![Version](https://img.shields.io/github/v/release/AthKouloumvakos/solo-sis-loader)](https://github.com/AthKouloumvakos/solo-sis-loader/releases)
+[![Release Date](https://img.shields.io/github/release-date/AthKouloumvakos/solo-sis-loader)](https://github.com/AthKouloumvakos/solo-sis-loader/releases)
+[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+![flake8](https://github.com/AthKouloumvakos/solo-sis-loader/actions/workflows/flake8.yml/badge.svg)
+![pytest](https://github.com/AthKouloumvakos/solo-sis-loader/actions/workflows/pytest.yml/badge.svg)
+[![pypi](https://img.shields.io/pypi/v/solo-sis-loader?style=flat&logo=pypi)](https://pypi.org/project/solo-sis-loader/)
+
+_SolO-SIS-Loader_ is a python data loader for **Suprathermal Ion Spectrograph (SIS)** instrument onboard **Solar Orbiter (SolO)**. SIS is part of the Energetic Particle Detector (EPD) suite for the SolO spacecraft and provides observations of He to Fe for an energy range from ∼100 keV/nucleon up to several MeV/nucleon.
 
 ## 🚀 Instrument Specifics
 
@@ -17,12 +25,10 @@ pip install SolO-SIS-Loader
 
 This will install all the necessary dependencies in the active python enviroment.
 
-_SolO-SIS-Loader_ can also be installed directly from the github repository using the latest developed version (not recomended). First, change to the directory you want to download the source code and install the package, and run 
+_SolO-SIS-Loader_ can also be installed directly from the github repository using the latest developed version (not recomended).
 
 ```python
-git clone https://github.com/AthKouloumvakos/SolO-SIS-Loader
-cd SolO-SIS-Loader
-pip install .
+pip install git+https://github.com/AthKouloumvakos/SolO-SIS-Loader
 ```
 
 ## 📙 Usage
@@ -50,10 +56,10 @@ sis.load()
 - [SunPy](https://sunpy.org/): The community-developed, free and open-source solar data analysis environment for Python.
 - [AstroPy](https://www.astropy.org/): The Astropy Project is a community effort to develop a single core package for Astronomy in Python.
 
-## Disclaimer
+## ⓘ Disclaimer
 
 This software is provided "as is", with no guarantee. It is not an official data source, and not officially endorsed by the corresponding instrument team.
 
-## 📜 Acknowledging or Citing _SolO-SIS-Loader_
+## 📜 Acknowledging or Citing _SolO-SIS-Loader_ [![https://doi.org/](https://zenodo.org/badge/)](https://doi.org/)
 
 If you use _SolO-SIS-Loader_ for scientific work or research presented in a publication, please mention it in the main text and in the methods or acknowledgements section add the following: "This research has made use of SolO-SIS-Loader, a python data loader for Suprathermal Ion Spectrograph (SIS) instrument onboard Solar Orbiter's (SolO) (Zenodo: [https://doi.org/](https://doi.org/)).". You may also acknowledge _SolO-SIS-Loader_ in posters or talks in the way you prefer. _SolO-SIS-Loader_ has a strong dependency on SunPy and AstroPy Python packages, consider citing these packages as well.
