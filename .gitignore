@@ -1,0 +1,23 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# Enviroment files for testing
+env/
+
+# Distribution / packaging and Python egg metadata, generated from source files by setuptools.
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+
+# solo-sis-loader specific files
+solo_sis_loader/_version.py
+
+# solo-sis-loader doc files
+docs/source/_build
+
+.DS_Store
+
+.vscode/
