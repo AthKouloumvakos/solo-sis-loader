@@ -1,5 +1,6 @@
 import cdflib
 import numpy as np
+import pandas as pd
 import sunpy.net.attrs as a
 import sunpy_soar  # noqa
 import xarray as xr
@@ -35,7 +36,7 @@ class instrument(object):
         if files == []:
             raise FileNotLoaded('No files provided')
 
-        if not species:
+        if (species is None) and hasattr(self, '_species'):
             species = self._species
 
         data = {}
@@ -45,21 +46,18 @@ class instrument(object):
             # index = CDFepoch.to_datetime(parameters.varget('EPOCH'))
             data_ = {}
             for specie in species:
-                data_[specie] = self.specie_todataset(parameters, specie)
-
+                data_[specie] = self.cdf_specie_to_dataset(parameters, specie)
                 if specie in data:
                     data[specie] = xr.concat([data[specie].isel(time=slice(0, None)), data_[specie].isel(time=slice(0, None))], 'time')
                 else:
                     data[specie] = data_[specie]
-
                 print(f'\n The following specie loaded to dataset: {specie}')
-                print(data[specie])
-
+                # print(data[specie])
         self.dataset = data
 
         return self.dataset
 
-    def specie_todataset(self, parameters, specie):
+    def cdf_specie_to_dataset(self, parameters, specie):
         # print(parameters.varattsget(f'{specie}_flux'))
 
         flux = parameters.varget(f'{specie}_flux')
@@ -86,17 +84,28 @@ class instrument(object):
             uncertainty = xr.DataArray(parameters.varget(f'{specie}_Uncertainty'),
                                        coords={'time': index, 'energy': energy},
                                        name='uncertainty')
-            if self.Detector == a.Detector('STEP'):
-                rates = xr.DataArray(np.nan * parameters.varget(f'{specie}_Uncertainty'),
-                                     coords={'time': index, 'energy': energy},
-                                     name='rate')
-            else:
-                rates = xr.DataArray(parameters.varget(f'{specie}_Rate'),
-                                     coords={'time': index, 'energy': energy},
-                                     name='rate')
+
+            rates = xr.DataArray(parameters.varget(f'{specie}_Rate'),
+                                 coords={'time': index, 'energy': energy},
+                                 name='rate')
+
             data_ = xr.merge([data_, uncertainty, rates])
 
         return data_
+
+    def get_species_df(self, species):
+        if species not in self.dataset.keys():
+            raise ValueError('Selected specie does not exist in the dataset')
+
+        df = pd.DataFrame()
+
+        for i in self.dataset[species]['energy'].values:
+            tdf = self.dataset[species].flux.sel(energy=i).to_dataframe()
+            tdf.drop(columns=['energy'], inplace=True)
+            tdf.rename(columns={'flux': f'{species}_flux[{i}]'}, inplace=True)
+            df = pd.concat([df, tdf])
+
+        return df
 
 
 class SIS(instrument):
