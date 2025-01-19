@@ -20,7 +20,7 @@ class instrument(object):
         self.Detector = a.Detector('')
         self.time = []
         self.level = []
-        self.dataset = []
+        self.dataset = {}
 
     def search(self, time: a.Time, level: a.Level):
         self.time = time
@@ -32,7 +32,7 @@ class instrument(object):
         files_downloaded.sort()
         return files_downloaded
 
-    def load(self, files, species=None):
+    def load(self, files, species=None, resample=None):
         if files == []:
             raise FileNotLoaded('No files provided')
 
@@ -43,10 +43,12 @@ class instrument(object):
         for file in files:
             print(f'\n Loading file: {file}')
             parameters = cdflib.CDF(str(file))
-            # index = CDFepoch.to_datetime(parameters.varget('EPOCH'))
             data_ = {}
             for specie in species:
                 data_[specie] = self.cdf_specie_to_dataset(parameters, specie)
+                if resample:
+                    data_[specie] = data_[specie].resample(time=resample).mean()
+
                 if specie in data:
                     data[specie] = xr.concat([data[specie].isel(time=slice(0, None)), data_[specie].isel(time=slice(0, None))], 'time')
                 else:
@@ -67,18 +69,38 @@ class instrument(object):
         flux[flux == filval] = np.nan
         flux_units = atts['UNITS']
 
-        index = CDFepoch.to_datetime(parameters.varget(atts['DEPEND_0']))
-        energy = parameters.varget(atts['DEPEND_1'])
+        # Original SolO/EPD data hast timestamp at 'start' of interval. Move index time from start of time interval to its center by adding half the DELTA_EPOCH value to the index.
+        dt = parameters.varget('DELTA_'+atts['DEPEND_0'])
+        index = CDFepoch.to_datetime(parameters.varget(atts['DEPEND_0'])) + np.timedelta64(1, 's') * dt / 2
+
+        if f'{specie}_Bins_Low_Energy' != atts['DEPEND_1']:
+            print(f'{specie}_Bins_Low_Energy do not match the {atts["DEPEND_1"]} value')
+
+        energy_low = parameters.varget(f'{specie}_Bins_Low_Energy')
+        energy_bins_width = parameters.varget(f'{specie}_Bins_Width')
+        energy_bins_text = parameters.varget(f'{specie}_Bins_Text')
+        energy = energy_low + energy_bins_width/2
 
         data_ = xr.Dataset(
             {
                 'flux': (['time', 'energy'], flux)
             },
             coords={'time': index, 'energy': energy},
-            attrs={'title': self.figure_title + f' ({specie}-Flux)',
-                    'axis_labels': {'time': 'Time (UTC)', 'energy': 'Energy (MeV)',
-                                    'flux': f'Flux ({flux_units})'},  # noqa
-                    'units': {'time': 'UTC', 'energy': 'MeV', 'flux': flux_units}  # noqa
+            attrs={
+                'instrument': getattr(self, 'Instrument', ''),
+                'detector': getattr(self, 'Detector', ''),
+                'telescope': getattr(self, 'Telescope', ''),
+                'specie': specie,
+                'axis_title': self.figure_title + f' ({specie}-Flux)',
+                'axis_label_time': 'Time (UTC)',
+                'axis_label_energy': 'Energy (MeV)',
+                'axis_label_flux': f'Flux ({flux_units.replace("cm^2","cm$^ 2$")})',
+                'units_time': 'UTC',
+                'units_energy': 'MeV/n',
+                'units_flux': flux_units,
+                'energy_low': energy_low,  # noqa
+                'energy_bin_width': energy_bins_width,  # noqa
+                'energy_bin_text': energy_bins_text
                     })
         if self.level not in (a.Level('LL01'), a.Level('LL02'), a.Level('LL03')):
             uncertainty = xr.DataArray(parameters.varget(f'{specie}_Uncertainty'),
@@ -107,17 +129,39 @@ class instrument(object):
 
         return df
 
+    def save_netcdf(self, filename):
+        # save dataset to netcdf
+
+        # Convert keys to a list for indexing
+        species_list = list(self.dataset.keys())
+
+        # Write the first species
+        self.dataset[species_list[0]].to_netcdf(filename, engine='netcdf4', group=species_list[0])
+
+        # Append the rest
+        for specie in species_list[1:]:
+            self.dataset[specie].to_netcdf(filename, engine='netcdf4', group=specie, mode='a')
+
+        print(f'Dataset saved to file: {filename}')
+
+    @staticmethod
+    def load_netcdf(cdf_file, species):
+        species_dataset = {}
+
+        for specie in species:
+            species_dataset[specie] = xr.open_dataset(cdf_file, group=specie)
+
+        return species_dataset
+
 
 class SIS(instrument):
-    def __init__(self, telescope='A', quantity='RATES', cadence='MEDIUM'):
+    def __init__(self, telescope='A', quantity='RATES-MEDIUM'):
         super().__init__()
 
         self.Detector = a.Detector('SIS')
 
         self.Telescope = telescope.upper()
         self.quantity = quantity.upper()
-        self.direction = ''
-        self.cadence = cadence.upper()
 
         self.figure_title = f'{self.Instrument.value}-{self.Detector.value}-{self.Telescope}'
 
@@ -126,7 +170,7 @@ class SIS(instrument):
         if self.level in (a.Level('LL01'), a.Level('LL02'), a.Level('LL03')):
             product = a.soar.Product(f'{self.Instrument.value}-{self.Detector.value}-{self.Telescope}-{self.quantity}')
         else:
-            product = a.soar.Product(f'{self.Instrument.value}-{self.Detector.value}-{self.Telescope}-{self.quantity}-{self.cadence}')
+            product = a.soar.Product(f'{self.Instrument.value}-{self.Detector.value}-{self.Telescope}-{self.quantity}')
 
         return product
 
