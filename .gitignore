@@ -17,6 +17,7 @@ solo_sis_loader/_version.py
 
 # solo-sis-loader doc files
 docs/source/_build
+docs/source/_examples
 
 .DS_Store
 
