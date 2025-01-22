@@ -179,3 +179,69 @@ class SIS(instrument):
         species = ['C', 'Ca', 'Fe', 'H', 'He3', 'He4', 'Mg', 'N', 'Ne', 'O', 'S', 'Si']
 
         return species
+
+
+class SIS_histo(instrument):
+    # (stime, level):
+    def __init__(self, telescope='A'):
+        super().__init__()
+
+        self.Detector = a.Detector('SIS')
+
+        self.Telescope = telescope.upper()
+        self.quantity = 'HEHIST'
+
+        self.figure_title = f'{self.Instrument.value}-{self.Detector.value}-{self.Telescope}'
+
+    @property
+    def _product(self):
+        product = a.soar.Product(f'{self.Instrument.value}-{self.Detector.value}-{self.Telescope}-{self.quantity}')
+
+        return product
+
+    def load(self, files):
+        if files == []:
+            raise FileNotLoaded('No files provided')
+
+        data = {}
+        for i, file in enumerate(files):
+            print(f'\n Loading file: {file}')
+            parameters = cdflib.CDF(str(file))
+
+            # Original SolO/EPD data hast timestamp at 'start' of interval. Move index time of DataFrame df from start of time interval to its center by adding half the DELTA_EPOCH value to the index.
+            dt = parameters.varget('DELTA_EPOCH')
+            index = CDFepoch.to_datetime(parameters.varget('EPOCH')) + np.timedelta64(1, 's') * dt / 2
+
+            mass_bins = parameters.varget('Mass_Bins')  # lower bound of the bin
+            mass_bin_width = parameters.varget('Mass_Bins_Width')
+            mass = mass_bins + mass_bin_width/2
+            histo = parameters.varget('He_Histogram')
+
+            data_ = xr.Dataset(
+                    {
+                        'flux': (['time', 'mass'], histo)
+                    },
+                    coords={'time': index, 'mass': mass},
+                    attrs={
+                        'instrument': getattr(self, 'Instrument', ''),
+                        'detector': getattr(self, 'Detector', ''),
+                        'telescope': getattr(self, 'Telescope', ''),
+                        'axis_title': self.figure_title + f' Mass Histogram)',
+                        'axis_label_time': 'Time (UTC)',
+                        'axis_label_mass': 'Mass (amu)',
+                        'axis_label_flux': f'Flux (counts)',
+                        'units_time': 'UTC',
+                        'units_mass': 'amu',
+                        'units_flux': 'counts',
+                        'mass_bins_low': mass_bins,  # noqa
+                        'mass_bin_width': mass_bin_width,  # noqa
+                    })
+
+            if i == 0:
+                data = data_
+            else:
+                data = xr.concat([data.isel(time=slice(0, None)), data_.isel(time=slice(0, None))], 'time')
+
+        self.dataset = data
+
+        return self.dataset
