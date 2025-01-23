@@ -71,7 +71,8 @@ class instrument(object):
 
         # Original SolO/EPD data hast timestamp at 'start' of interval. Move index time from start of time interval to its center by adding half the DELTA_EPOCH value to the index.
         dt = parameters.varget('DELTA_'+atts['DEPEND_0'])
-        index = CDFepoch.to_datetime(parameters.varget(atts['DEPEND_0'])) + np.timedelta64(1, 's') * dt / 2
+        time = np.array(CDFepoch.to_datetime(parameters.varget(atts['DEPEND_0'])), dtype='datetime64[s]')
+        index = time + np.timedelta64(1, 's') * dt / 2
 
         if f'{specie}_Bins_Low_Energy' != atts['DEPEND_1']:
             print(f'{specie}_Bins_Low_Energy do not match the {atts["DEPEND_1"]} value')
@@ -210,7 +211,8 @@ class SIS_histo(instrument):
 
             # Original SolO/EPD data hast timestamp at 'start' of interval. Move index time of DataFrame df from start of time interval to its center by adding half the DELTA_EPOCH value to the index.
             dt = parameters.varget('DELTA_EPOCH')
-            index = CDFepoch.to_datetime(parameters.varget('EPOCH')) + np.timedelta64(1, 's') * dt / 2
+            time = np.array(CDFepoch.to_datetime(parameters.varget('EPOCH')), dtype='datetime64[s]')
+            index = time + np.timedelta64(1, 's') * dt / 2
 
             mass_bins = parameters.varget('Mass_Bins')  # lower bound of the bin
             mass_bin_width = parameters.varget('Mass_Bins_Width')

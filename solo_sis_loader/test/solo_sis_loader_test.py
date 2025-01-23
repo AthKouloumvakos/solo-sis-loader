@@ -10,6 +10,7 @@ export PYTHONPATH="${PYTHONPATH}:{top_level_dir_that_solo-sis-loader_lives}/solo
 import os
 import pkgutil
 
+import numpy as np
 import sunpy.net.attrs as a
 import xarray as xr
 
@@ -106,3 +107,24 @@ def test_load():
 
     for key in sis.dataset.keys():
         assert isinstance(sis.dataset[key], xr.Dataset), f"Value for key '{key}' is not an xarray.Dataset."
+
+
+def test_xarray_time_values():
+    """
+    This tests if the times are consistent.
+    """
+
+    sis = SIS()
+    response = sis.search(
+        a.Time('2022-09-04', '2022-09-04'),
+        level=a.Level('L2'))
+
+    files = sis.fetch(response)
+    sis.load(files)
+
+    times = ['2022-09-04T00:00:28.000000000',
+             '2022-09-04T00:25:28.000000000',
+             '2022-09-04T00:50:28.000000000',
+             '2022-09-04T23:59:58.000000000']
+    for i, t in zip([0, 50, 100, -1], times):
+        assert sis.dataset['H'].time.values[i] == np.datetime64(t)
