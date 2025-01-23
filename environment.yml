@@ -7,6 +7,7 @@ channels:
 dependencies:
   - python=3.10
   - numpy
+  - pandas
   - sunpy
   - sunpy-soar
   - xarray
